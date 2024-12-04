@@ -28,6 +28,22 @@ function init() {
   const axes = new THREE.AxesHelper(18);
   scene.add(axes);
 
+  // 背景の設定
+  let renderTarget;
+  function setBackground() {
+    const loader = new THREE.TextureLoader();
+    const texture = loader.load(
+      "Galaxy.png",
+      () => {
+        renderTarget
+        = new THREE.WebGLCubeRenderTarget(texture.image.height);
+        renderTarget.fromEquirectangularTexture(renderer, texture);
+        scene.background = renderTarget.texture;
+        render();
+      }
+    )
+  }
+
   // カメラの作成
   const camera = new THREE.PerspectiveCamera(
     50, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -39,6 +55,12 @@ function init() {
   renderer.setSize(window.innerWidth, innerHeight);
   document.getElementById("output").appendChild(renderer.domElement);
 
+  // テクスチャの読み込み
+  const textureLoader = new THREE.TextureLoader();
+  const suntexture = textureLoader.load("sun.png");
+  const earthtexture = textureLoader.load("earth.png");
+  const moontexture = textureLoader.load("moon.png");
+
   // カメラコントロール
   const orbitControls = new OrbitControls(camera, renderer.domElement);
 
@@ -46,19 +68,21 @@ function init() {
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
   // 太陽光
-  const pointLight = new THREE.PointLight(0xffffff, 2);
-  pointLight.position.set(0, 10, 10);
+  const pointLight = new THREE.PointLight(0xffffff, 5);
+  pointLight.position.set(0, 0, 0);
   scene.add(pointLight);
 
   // 太陽
   const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
-  const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+  const sunMaterial = new THREE.MeshLambertMaterial();
+  sunMaterial.map = suntexture;
   const sun = new THREE.Mesh(sunGeometry, sunMaterial);
   scene.add(sun);
 
   // 地球
   const earthGeometry = new THREE.SphereGeometry(2, 32, 32);
-  const earthMaterial = new THREE.MeshStandardMaterial({ color: 0x0000ff });
+  const earthMaterial = new THREE.MeshLambertMaterial();
+  earthMaterial.map = earthtexture;
   const earth = new THREE.Mesh(earthGeometry, earthMaterial);
 
   // 地球の軌道グループ
@@ -69,17 +93,18 @@ function init() {
 
   // 月
   const moonGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-  const moonMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
+  const moonMaterial = new THREE.MeshLambertMaterial();
+  moonMaterial.map = moontexture;
   const moon = new THREE.Mesh(moonGeometry, moonMaterial);
 
   // 月の軌道グループ
   const moonOrbit = new THREE.Group();
   earthOrbit.add(moonOrbit);
-  const radius = 15;
-  let thate = 0;
-  thate +=0.01* Math.PI;
-  moon.position.x=radius*Math.cos(thate);
-  moon.position.z=radius*Math.sin(thate);
+  const radius = 5;
+  let theta = 0;
+  theta +=0.01* Math.PI;
+  moon.position.x=radius*Math.cos(theta);
+  moon.position.z=radius*Math.sin(theta);
   moonOrbit.add(moon);
 
 
@@ -95,7 +120,8 @@ function init() {
     earthOrbit.rotation.y += 0.002; // 地球の軌道回転
 
     // 月の公転
-    moonOrbit.rotation.y += 0.05; // 月の軌道回転
+    moonOrbit.rotation.y += 0.03; // 月の軌道回転
+    moonOrbit.position.copy(earth.position);
 
     orbitControls.update();
     // 座標軸の表示
@@ -107,7 +133,8 @@ function init() {
   }
 
   // 描画開始
-  render();
+  setBackground();
+
 }
 
 init();
