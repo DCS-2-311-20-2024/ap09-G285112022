@@ -7,6 +7,7 @@
 // ライブラリをモジュールとして読み込む
 import * as THREE from "three";
 import { GUI } from "ili-gui";
+import { OrbitControls } from "three/addons";
 
 // ３Ｄページ作成関数の定義
 function init() {
@@ -21,6 +22,7 @@ function init() {
 
   // シーン作成
   const scene = new THREE.Scene();
+
 
   // 座標軸の設定
   const axes = new THREE.AxesHelper(18);
@@ -37,17 +39,20 @@ function init() {
   renderer.setSize(window.innerWidth, innerHeight);
   document.getElementById("output").appendChild(renderer.domElement);
 
+  // カメラコントロール
+  const orbitControls = new OrbitControls(camera, renderer.domElement);
+
   //　環境光
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   scene.add(ambientLight);
   // 太陽光
-  const pointLight = new THREE.PointLight(0xffffff, 1);
-  pointLight.position.set(0, 0, 0);
+  const pointLight = new THREE.PointLight(0xffffff, 2);
+  pointLight.position.set(0, 10, 10);
   scene.add(pointLight);
 
   // 太陽
   const sunGeometry = new THREE.SphereGeometry(5, 32, 32);
-  const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffcc00 }); 
+  const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
   const sun = new THREE.Mesh(sunGeometry, sunMaterial);
   scene.add(sun);
 
@@ -59,18 +64,22 @@ function init() {
   // 地球の軌道グループ
   const earthOrbit = new THREE.Group();
   scene.add(earthOrbit);
-  earth.position.set(10, 0, 0);
+  earth.position.set(15, 0, 0);
   earthOrbit.add(earth);
 
   // 月
   const moonGeometry = new THREE.SphereGeometry(0.5, 32, 32);
-  const moonMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+  const moonMaterial = new THREE.MeshBasicMaterial({ color: 0x888888 });
   const moon = new THREE.Mesh(moonGeometry, moonMaterial);
 
   // 月の軌道グループ
   const moonOrbit = new THREE.Group();
   earthOrbit.add(moonOrbit);
-  moon.position.set(3, 0, 0);
+  const radius = 15;
+  let thate = 0;
+  thate +=0.01* Math.PI;
+  moon.position.x=radius*Math.cos(thate);
+  moon.position.z=radius*Math.sin(thate);
   moonOrbit.add(moon);
 
 
@@ -78,6 +87,17 @@ function init() {
 
   // 描画関数
   function render() {
+
+    // 地球の自転
+    earth.rotation.y += 0.01;
+
+    // 地球の公転
+    earthOrbit.rotation.y += 0.002; // 地球の軌道回転
+
+    // 月の公転
+    moonOrbit.rotation.y += 0.05; // 月の軌道回転
+
+    orbitControls.update();
     // 座標軸の表示
     axes.visible = param.axes;
     // 描画
